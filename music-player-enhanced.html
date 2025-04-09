@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Aesthetic Music Player</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #121212;
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .bg-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.4;
+      filter: blur(8px) brightness(0.5);
+      z-index: -1;
+      transform: scale(1.1);
+    }
+    
+    .music-player {
+      width: 70%;
+      overflow-y: scroll;
+      
+      border-radius: 24px;
+      background: rgba(18, 18, 18, 0.7);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
+      padding: 30px;
+      transform: translateY(0);
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .music-player:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+    
+    .album-art {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 25px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      transition: all 0.5s ease;
+    }
+    
+    .album-art:hover {
+      transform: scale(1.03);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+    
+    .album-art::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%);
+      pointer-events: none;
+    }
+    
+    .album-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 8s ease;
+    }
+    
+    .album-art:hover img {
+      transform: scale(1.08);
+    }
+    
+    .vinyl-effect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 180px;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      transition: all 0.5s ease;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background-image: repeating-radial-gradient(circle at 50%, transparent 10px, rgba(255, 255, 255, 0.1) 12px, transparent 14px);
+    }
+    
+    .vinyl-effect::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+    
+    .album-art:hover .vinyl-effect {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.9;
+      animation: rotate 8s linear infinite;
+    }
+    
+    @keyframes rotate {
+      0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+      100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+    
+    .pulse-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      animation: pulse 2s linear infinite;
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    @keyframes pulse {
+      0% {
+        width: 40px;
+        height: 40px;
+        opacity: 0.8;
+      }
+      100% {
+        width: 180px;
+        height: 180px;
+        opacity: 0;
+      }
+    }
+    
+    .now-playing {
+      background: linear-gradient(90deg, #ff6b6b, #7a6bff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .now-playing::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #ff6b6b;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: blink 1.5s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    .song-info {
+      margin-bottom: 25px;
+    }
+    
+    .song-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .artist-name {
+      font-size: 16px;
+      color: #d9d9d9;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    
+    .album-name {
+      font-size: 14px;
+      color: #a0a0a0;
+      font-weight: 400;
+    }
+    
+    .mini-visualizer {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 4px;
+      height: 30px;
+      margin: 20px 0;
+    }
+    
+    .visualizer-bar {
+      width: 4px;
+      background: linear-gradient(180deg, #7a6bff, #ff6b6b);
+      border-radius: 4px;
+      animation: visualize 0.8s infinite alternate;
+      transition: height 0.2s ease;
+    }
+    
+    .visualizer-bar:nth-child(1) { animation-delay: 0.0s; height: 60%; }
+    .visualizer-bar:nth-child(2) { animation-delay: 0.1s; height: 30%; }
+    .visualizer-bar:nth-child(3) { animation-delay: 0.2s; height: 75%; }
+    .visualizer-bar:nth-child(4) { animation-delay: 0.3s; height: 25%; }
+    .visualizer-bar:nth-child(5) { animation-delay: 0.4s; height: 50%; }
+    .visualizer-bar:nth-child(6) { animation-delay: 0.5s; height: 70%; }
+    .visualizer-bar:nth-child(7) { animation-delay: 0.6s; height: 40%; }
+    
+    @keyframes visualize {
+      0% { transform: scaleY(0.5); }
+      100% { transform: scaleY(1.2); }
+    }
+    
+    .progress-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .progress-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.05) 0%, 
+        rgba(255, 255, 255, 0.1) 20%, 
+        rgba(255, 255, 255, 0.05) 40%,
+        rgba(255, 255, 255, 0.1) 60%,
+        rgba(255, 255, 255, 0.05) 80%);
+      transform: translateX(-100%);
+      animation: shine 3s infinite;
+    }
+    
+    @keyframes shine {
+      100% { transform: translateX(100%); }
+    }
+    
+    .progress-bar {
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, #7a6bff, #ff6b6b);
+      border-radius: 10px;
+      position: relative;
+      transition: width 0.1s linear;
+    }
+    
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: -4px;
+      width: 14px;
+      height: 14px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      transform: scale(0.5);
+    }
+    
+    .progress-container:hover .progress-bar::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .time-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #b3b3b3;
+      margin-bottom: 25px;
+      font-weight: 500;
+    }
+    
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .main-controls {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .btn {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.4s, height 0.4s;
+      z-index: -1;
+    }
+    
+    .btn:hover::after {
+      width: 200%;
+      height: 200%;
+    }
+    
+    .btn:hover {
+      transform: scale(1.1);
+      color: #ffffff;
+    }
+    
+    .btn-play {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #7a6bff, #ff6b6b);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 5px 15px rgba(122, 107, 255, 0.4);
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .btn-play::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6b6b, #7a6bff);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    .btn-play:hover {
+      transform: scale(1.1) translateY(-5px);
+      box-shadow: 0 10px 25px rgba(122, 107, 255, 0.6);
+    }
+    
+    .btn-play:hover::before {
+      opacity: 1;
+    }
+    
+    .btn-play:active {
+      transform: scale(0.95);
+    }
+    
+    .volume-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .volume-slider {
+      width: 70px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .volume-level {
+      height: 100%;
+      width: 70%;
+      background: linear-gradient(90deg, #7a6bff, #ff6b6b);
+      border-radius: 10px;
+      position: relative;
+    }
+    
+    .volume-level::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: -3px;
+      width: 10px;
+      height: 10px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .volume-slider:hover .volume-level::after {
+      opacity: 1;
+    }
+    
+    .playlist-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #d9d9d9;
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 8px;
+      margin-top: 25px;
+      transition: all 0.3s;
+      backdrop-filter: blur(5px);
+      font-weight: 500;
+      width: 100%;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .playlist-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .extra-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+    
+    .control-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #d9d9d9;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .control-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .control-btn.active {
+      background: linear-gradient(135deg, rgba(122, 107, 255, 0.2), rgba(255, 107, 107, 0.2));
+      border-color: rgba(255, 107, 107, 0.3);
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background image -->
+  <img src="kevin-nalty-mSwjJmbRWtg-unsplash.jpg" alt="Background" class="bg-image">
+  
+  <div class="music-player">
+    <div class="album-art">
+      <img src="nadania.jpg" alt="Album Cover">
+      <div class="vinyl-effect"></div>
+      <div class="pulse-ring"></div>
+    </div>
+    
+    <div class="now-playing">Now Playing</div>
+    
+    <div class="song-info">
+      <div class="song-title">Dream of Electric Sheep</div>
+      <div class="artist-name">Neon Dystopia</div>
+      <div class="album-name">Future Nostalgia</div>
+    </div>
+    
+    <div class="mini-visualizer">
+      <div class="visualizer-bar"></div>
+      <div class="visualizer-bar"></div>
+      <div class="visualizer-bar"></div>
+      <div class="visualizer-bar"></div>
+      <div class="visualizer-bar"></div>
+      <div class="visualizer-bar"></div>
+      <div class="visualizer-bar"></div>
+    </div>
+    
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+    </div>
+    
+    <div class="time-info">
+      <div class="current-time">2:14</div>
+      <div class="total-time">5:36</div>
+    </div>
+    
+    <div class="controls">
+      <button class="btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+          <path d="M14 12 8 6v12l6-6z"/>
+        </svg>
+      </button>
+      
+      <div class="main-controls">
+        <button class="btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="19 20 9 12 19 4 19 20"/>
+            <line x1="5" y1="19" x2="5" y2="5"/>
+          </svg>
+        </button>
+        
+        <button class="btn btn-play">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        </button>
+        
+        <button class="btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 4 15 12 5 20 5 4"/>
+            <line x1="19" y1="5" x2="19" y2="19"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="volume-container">
+        <button class="btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+        </button>
+        <div class="volume-slider">
+          <div class="volume-level"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="extra-controls">
+      <button class="control-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+          <path d="M17 14V4"/>
+          <path d="M7 4v16"/>
+          <path d="M7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+          <path d="M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+          <path d="M14 4h3"/>
+          <path d="M4 4h3"/>
+          <path d="M4 20h3"/>
+        </svg>
+      </button>
+      
+      <button class="control-btn active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+        </svg>
+      </button>
+      
+      <button class="control-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v8"/>
+          <path d="M8 12h8"/>
+        </svg>
+      </button>
+      
+      <button class="control-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+    </div>
+    
+    <button class="playlist-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="8" y1="6" x2="21" y2="6"/>
+        <line x1="8" y1="12" x2="21" y2="12"/>
+        <line x1="8" y1="18" x2="21" y2="18"/>
+        <line x1="3" y1="6" x2="3.01" y2="6"/>
+        <line x1="3" y1="12" x2="3.01" y2="12"/>
+        <line x1="3" y1="18" x2="3.01" y2="18"/>
+      </svg>
+      View Playlist
+    </button>
+  </div>
+</body>
+</html>
